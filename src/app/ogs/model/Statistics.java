@@ -5,10 +5,10 @@ import java.util.StringJoiner;
 
 public class Statistics {
 
-    private double averageWaterContent;
-    private int samplesAboveUnitWeightThreshold;
-    private int samplesAboveWaterContentThreshold;
-    private int samplesAboveShearStrengthThreshold;
+	    private double averageWaterContent;
+	    private int samplesAboveUnitWeightThreshold;
+	    private int samplesAboveWaterContentThreshold;
+	    private int samplesAboveShearStrengthThreshold;
 
     public Statistics() {}
 

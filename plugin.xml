@@ -9,10 +9,6 @@
             application="org.eclipse.e4.ui.workbench.swt.E4Application"
             name="app.ogs">
          <property
-               name="applicationCSS"
-               value="platform:/plugin/app.ogs/css/default.css">
-         </property>
-         <property
                name="appName"
                value="app.ogs">
          </property>
