@@ -20,4 +20,5 @@ Bundle-ClassPath: libs/jackson-annotations-2.18.3.jar,
  libs/jackson-core-2.18.3.jar,
  libs/jackson-databind-2.18.3.jar,
  libs/jackson-datatype-jsr310-2.18.3.jar,
+ libs/jfreechart-1.5.5.jar,
  .

@@ -1,5 +1,6 @@
 package app.ogs.parts;
 
+import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.annotation.PostConstruct;
@@ -11,9 +12,16 @@ import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.awt.SWT_AWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import app.ogs.BackendClient;
 import app.ogs.model.Sample;
@@ -37,6 +45,10 @@ public class SamplePart {
     private Label averageWaterLabel;
     private Label thresholdCountLabel;
 
+    private Composite chartComposite;
+    private ComboViewer parameterSelector;
+    private ChartPanel chartPanel;
+
     private List<Sample> allSamples = new ArrayList<>();
 
 
@@ -52,7 +64,8 @@ public class SamplePart {
         createButtons(parent);
         createStatisticsArea(parent);
 		createUnitSwitch(parent);
-		
+		createGraphArea(parent);
+
         locationFilterCombo.addSelectionChangedListener(event -> filterByLocation());
 
         fetchAndLoadSamples();
@@ -258,11 +271,15 @@ public class SamplePart {
 
     private void filterByLocation() {
         String selectedLocation = (String) ((IStructuredSelection) locationFilterCombo.getSelection()).getFirstElement();
+        List<Sample> filtered;
         if ("All".equals(selectedLocation)) {
-        	tableViewer.setInput(allSamples);
+        	filtered = allSamples;
         } else {
-        	tableViewer.setInput(allSamples.stream().filter(s -> s.getLocation().equals(selectedLocation)).toList());
+        	filtered = allSamples.stream().filter(s -> s.getLocation().equals(selectedLocation)).toList();
         }
+        tableViewer.setInput(filtered);
+        updateFilteredStatistics(filtered);
+        updateChart(filtered);
     }
 
     private void updateStatistics(List<Sample> currentSamples) {
@@ -292,5 +309,76 @@ public class SamplePart {
         thresholdCountLabel.setText("(Threshold stats only reflect all samples)");
         averageWaterLabel.getParent().layout();
     }
+    
+    private void createGraphArea(Composite parent) {
+        Group graphGroup = new Group(parent, SWT.NONE);
+        graphGroup.setText("Depth vs Parameter");
+        graphGroup.setLayout(new GridLayout(2, false));
+        graphGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+
+        new Label(graphGroup, SWT.NONE).setText("Parameter:");
+
+        parameterSelector = new ComboViewer(graphGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+        parameterSelector.setContentProvider(ArrayContentProvider.getInstance());
+        parameterSelector.setInput(List.of("Unit Weight", "Water Content", "Shear Strength"));
+        parameterSelector.setSelection(new StructuredSelection("Unit Weight"));
+
+        chartComposite = new Composite(graphGroup, SWT.EMBEDDED);
+        GridData chartGrid = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
+        chartComposite.setLayoutData(chartGrid);
+
+        parameterSelector.addSelectionChangedListener(e -> updateChart());
+        createChart(List.of()); // empty initial chart
+    }
+    
+    private void createChart(List<Sample> samples) {
+        String selected = (String) ((IStructuredSelection) parameterSelector.getSelection()).getFirstElement();
+
+        XYSeries series = new XYSeries(selected);
+        for (Sample s : samples) {
+            double yValue = switch (selected) {
+                case "Water Content" -> s.getWaterContent();
+                case "Shear Strength" -> s.getShearStrength();
+                default -> s.getUnitWeight(); // "Unit Weight"
+            };
+            series.add(s.getDepth(), yValue);
+        }
+
+        XYSeriesCollection dataset = new XYSeriesCollection(series);
+        JFreeChart chart = ChartFactory.createXYLineChart(
+            selected + " vs Depth",
+            "Depth (m)",
+            selected,
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, true, false
+        );
+
+        // Embed chart in SWT
+        if (chartComposite != null && !chartComposite.isDisposed()) {
+            Frame frame = SWT_AWT.new_Frame(chartComposite);
+            chartPanel = new ChartPanel(chart);
+            frame.add(chartPanel);
+            chartComposite.layout();
+        }
+    }
+
+    private void updateChart() {
+        IStructuredSelection selection = locationFilterCombo.getStructuredSelection();
+        String selectedLocation = (String) selection.getFirstElement();
+
+        List<Sample> filtered = allSamples.stream()
+            .filter(s -> selectedLocation.equals("All") || s.getLocation().equals(selectedLocation))
+            .toList();
+
+        updateChart(filtered);
+    }
+
+    private void updateChart(List<Sample> filteredSamples) {
+        if (chartPanel != null) chartPanel.setChart(null); // Clear before redraw
+        createChart(filteredSamples);
+    }
+
+
 
 }

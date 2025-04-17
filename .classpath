@@ -17,6 +17,7 @@
 	<classpathentry kind="lib" path="libs/jackson-core-2.18.3.jar"/>
 	<classpathentry kind="lib" path="libs/jackson-annotations-2.18.3.jar"/>
 	<classpathentry kind="lib" path="libs/jackson-datatype-jsr310-2.18.3.jar"/>
+	<classpathentry kind="lib" path="libs/jfreechart-1.5.5.jar"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="module" value="true"/>
